@@ -99,35 +99,13 @@
           <input type="text" class="form-control" placeholder="検索" />
         </div>
         <!-- アイテムリスト -->
-        <div class="px-3">
-          <div>サ</div>
-          <div class="item-controls">
-            ・シャー芯 B <span class="badge bg-light text-dark">×2</span>
-            <button class="btn btn-danger btn-sm">＋</button>
-            <button class="btn btn-primary btn-sm">－</button>
-          </div>
-          <div class="item-controls">
-            ・シャー芯 HB <span class="badge bg-light text-dark">×1</span>
-            <button class="btn btn-danger btn-sm">＋</button>
-            <button class="btn btn-primary btn-sm">－</button>
-          </div>
-          <div>ナ</div>
-          <div class="item-controls">
-            ・ノリ <span class="badge bg-light text-dark">×3</span>
-            <button class="btn btn-danger btn-sm">＋</button>
-            <button class="btn btn-primary btn-sm">－</button>
-          </div>
-          <div>ラ</div>
-          <div class="item-controls">
-            ・ルーズリーフ <span class="badge bg-light text-dark">×3</span>
-            <button class="btn btn-danger btn-sm">＋</button>
-            <button class="btn btn-primary btn-sm">－</button>
-          </div>
+        <div class="px-3" id="stock-list">
+          <!-- ここにJSでアイテムリストを描画 -->
         </div>
       </div>
 
       <!-- 買うものタブ内容 -->
-      <div id="buy-content" class="tab-content orange-bg">
+      <div id="buy-content" class="tab-content ">
         <div class="px-3 pt-3">
           <div>・消しゴム</div>
           <div>・ノート</div>
@@ -140,6 +118,42 @@
       <button class="add-button">追加</button>
     </div>
     <script>
+      // アイテムデータ（例）
+      const stockItems = [
+        { name: "シャー芯 B", furigana: "サ", count: 0 },
+        { name: "シャー芯 HB", furigana: "サ", count: 1 },
+        { name: "ノリ", furigana: "ナ", count: 3 },
+        { name: "名前ペン", furigana: "ナ", count: 2},
+        { name: "ルーズリーフ", furigana: "ラ", count: 3 }
+      ];
+
+      // アイテムリストを描画する関数
+      function renderStockList() {
+        const container = document.getElementById("stock-list"); // リスト表示用の要素を取得
+        container.innerHTML = ""; // 一度リストを空にする
+        let currentFurigana = ""; // 現在表示中のフリガナ（見出し用）
+
+        // stockItems配列の各アイテムについて処理
+        stockItems.forEach(item => {
+          // フリガナが変わったら見出しを追加
+          if (item.furigana !== currentFurigana) {
+            currentFurigana = item.furigana;
+            container.innerHTML += `<div>${currentFurigana}</div>`;
+          }
+          // アイテム名・個数・操作ボタンを表示
+          container.innerHTML += `
+            <div class="item-controls">
+              ・${item.name} <span class="badge bg-light text-dark">×${item.count}</span>
+              <button class="btn btn-danger btn-sm">＋</button>
+              <button class="btn btn-primary btn-sm">－</button>
+            </div>
+          `;
+        });
+      }
+
+      // 初期表示
+      renderStockList();
+
       // タブ要素とコンテンツ要素を取得
       const tabStock = document.getElementById("tab-stock");
       const tabBuy = document.getElementById("tab-buy");
