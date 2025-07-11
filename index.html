@@ -82,6 +82,11 @@
         padding-bottom: 30px;
         min-height: 400px;
       }
+      .buy-done-btn {
+        background-color: #2ECC71 !important;
+        border-color: #2ECC71 !important;
+        color: #fff !important;
+      }
     </style>
   </head>
   <body>
@@ -121,7 +126,7 @@
       // アイテムデータ（例）
       const stockItems = [
         { name: "シャー芯 B", furigana: "サ", count: 0 },
-        { name: "シャー芯 HB", furigana: "サ", count: 1 },
+        { name: "シャー芯 HB", furigana: "サ", count: 0 },
         { name: "ノリ", furigana: "ナ", count: 3 },
         { name: "名前ペン", furigana: "ナ", count: 2},
         { name: "ルーズリーフ", furigana: "ラ", count: 3 }
@@ -129,25 +134,64 @@
 
       // アイテムリストを描画する関数
       function renderStockList() {
-        const container = document.getElementById("stock-list"); // リスト表示用の要素を取得
-        container.innerHTML = ""; // 一度リストを空にする
-        let currentFurigana = ""; // 現在表示中のフリガナ（見出し用）
+        const container = document.getElementById("stock-list");
+        container.innerHTML = "";
+        let currentFurigana = "";
 
-        // stockItems配列の各アイテムについて処理
-        stockItems.forEach(item => {
-          // フリガナが変わったら見出しを追加
+        // 買うものリストの要素を取得し、初期化
+        const buyContentDiv = document.querySelector("#buy-content .px-3.pt-3");
+        buyContentDiv.innerHTML = "";
+
+        stockItems.forEach((item, idx) => {
           if (item.furigana !== currentFurigana) {
             currentFurigana = item.furigana;
             container.innerHTML += `<div>${currentFurigana}</div>`;
           }
-          // アイテム名・個数・操作ボタンを表示
           container.innerHTML += `
             <div class="item-controls">
               ・${item.name} <span class="badge bg-light text-dark">×${item.count}</span>
-              <button class="btn btn-danger btn-sm">＋</button>
+              <button class="btn btn-danger btn-sm plus-btn" data-index="${idx}">＋</button>
               <button class="btn btn-primary btn-sm">－</button>
             </div>
           `;
+
+          if (item.count === 0) {
+            buyContentDiv.innerHTML += `
+              <div style="display:flex;align-items:center;gap:5px;">
+                ・${item.name}
+                <button class="btn btn-success btn-sm buy-done-btn" data-index="${idx}">買った</button>
+              </div>
+            `;
+          }
+        });
+
+        // 「＋」ボタンのイベントリスナーを追加
+        document.querySelectorAll('.plus-btn').forEach(btn => {
+          btn.addEventListener('click', function() {
+            const idx = this.getAttribute('data-index');
+            stockItems[idx].count += 1;
+            renderStockList();
+          });
+        });
+
+        // 「－」ボタンのイベントリスナーを追加
+        document.querySelectorAll('.btn-primary').forEach((btn, i) => {
+          btn.addEventListener('click', function() {
+            const idx = this.previousElementSibling.getAttribute('data-index');
+            if (stockItems[idx].count > 0) {
+              stockItems[idx].count -= 1;
+              renderStockList();
+            }
+          });
+        });
+
+        // 「買った」ボタンのイベントリスナーを追加
+        document.querySelectorAll('.buy-done-btn').forEach(btn => {
+          btn.addEventListener('click', function() {
+            const idx = this.getAttribute('data-index');
+            stockItems[idx].count = 1;
+            renderStockList();
+          });
         });
       }
 
