@@ -351,8 +351,7 @@
       };
       // 追加ボタン（モーダル内）で入力値取得（例: アラート表示）
       document.getElementById('submitBtn').onclick = function() {
-        const item = document.getElementById('itemInput').value;
-        // どのセレクトボックスも選択されていないかチェック
+        const item = document.getElementById('itemInput').value.trim();
         let selectedKana = "";
         document.querySelectorAll('.kana-select-row select').forEach(select => {
           if (select.value && select.value !== "") {
@@ -367,7 +366,15 @@
           alert('品物名を入力してください');
           return;
         }
-        alert('追加された品物: ' + item);
+        // 既存リストに追加
+        stockItems.push({ name: item, furigana: selectedKana, count: 0 });
+        renderStockList();
+        // 入力欄と選択状態をリセット
+        document.getElementById('itemInput').value = "";
+        document.querySelectorAll('.kana-select-row select').forEach(select => {
+          select.selectedIndex = 0;
+        });
+        document.getElementById('selectedKana').textContent = "";
         document.getElementById('modal').style.display = 'none';
       };
       document.getElementById('footerCloseBtn').onclick = function() {
