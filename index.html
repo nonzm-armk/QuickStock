@@ -87,6 +87,25 @@
         border-color: #2ECC71 !important;
         color: #fff !important;
       }
+      /* モーダルのスタイル */
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.5);
+      }
+      .modal-dialog {
+        margin: 100px auto;
+      }
+      .modal-content {
+        background: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        position: relative;
+      }
     </style>
   </head>
   <body>
@@ -120,7 +139,94 @@
       </div>
 
       <!-- 追加ボタン -->
-      <button class="add-button">追加</button>
+      <button id="addBtn" class="add-button">追加</button>
+
+      <!-- モーダル本体 -->
+      <div class="modal" id="modal" tabindex="-1" style="display:block; background:rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+          <div class="modal-content" style="position:relative;">
+            <div class="modal-header">
+              
+              <button type="button" id="closeBtn" class="btn-close" aria-label="閉じる"></button>
+            </div>
+            <div class="modal-body">
+              <input type="text" id="itemInput" class="form-control" placeholder="品物名を入力">
+              <!-- ここにセレクトボックスを追加 -->
+              <div class="kana-select-row mt-3" style="display: flex; gap: 8px; margin-bottom: 8px;">
+                <select>
+                  <option value="ア">ア</option>
+                  <option value="イ">イ</option>
+                  <option value="ウ">ウ</option>
+                  <option value="エ">エ</option>
+                  <option value="オ">オ</option>
+                </select>
+                <select>
+                  <option value="カ">カ</option>
+                  <option value="キ">キ</option>
+                  <option value="ク">ク</option>
+                  <option value="ケ">ケ</option>
+                  <option value="コ">コ</option>
+                </select>
+                <select>
+                  <option value="サ">サ</option>
+                  <option value="シ">シ</option>
+                  <option value="ス">ス</option>
+                  <option value="セ">セ</option>
+                  <option value="ソ">ソ</option>
+                </select>
+                <select>
+                  <option value="タ">タ</option>
+                  <option value="チ">チ</option>
+                  <option value="ツ">ツ</option>
+                  <option value="テ">テ</option>
+                  <option value="ト">ト</option>
+                </select>
+                <select>
+                  <option value="ナ">ナ</option>
+                  <option value="ニ">ニ</option>
+                  <option value="ヌ">ヌ</option>
+                  <option value="ネ">ネ</option>
+                  <option value="ノ">ノ</option>
+                </select>
+                <select>
+                  <option value="ハ">ハ</option>
+                  <option value="ヒ">ヒ</option>
+                  <option value="フ">フ</option>
+                  <option value="ヘ">ヘ</option>
+                  <option value="ホ">ホ</option>
+                </select>
+                <select>
+                  <option value="マ">マ</option>
+                  <option value="ミ">ミ</option>
+                  <option value="ム">ム</option>
+                  <option value="メ">メ</option>
+                  <option value="モ">モ</option>
+                </select>
+                <select>
+                  <option value="ヤ">ヤ</option>
+                  <option value="ユ">ユ</option>
+                  <option value="ヨ">ヨ</option>
+                </select>
+                <select>
+                  <option value="ラ">ラ</option>
+                  <option value="リ">リ</option>
+                  <option value="ル">ル</option>
+                  <option value="レ">レ</option>
+                  <option value="ロ">ロ</option>
+                </select>
+                <select>
+                  <option value="ワ">ワ</option>
+                </select>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <!-- モーダル内の追加ボタン -->
+              <button id="submitBtn" class="btn" style="background-color: #ff69b4; color: #fff;">追加</button>
+              <button type="button" class="btn btn-secondary" id="footerCloseBtn">閉じる</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
     <script>
       // アイテムデータ（例）
@@ -219,6 +325,24 @@
         buyContent.classList.add("active");           // 買うもの内容を表示
         stockContent.classList.remove("active");      // ストック内容を非表示
       });
+
+      // 追加ボタンでモーダル表示
+      document.getElementById('addBtn').onclick = function() {
+        document.getElementById('modal').style.display = 'block';
+      };
+      // 閉じるボタンでモーダル非表示
+      document.getElementById('closeBtn').onclick = function() {
+        document.getElementById('modal').style.display = 'none';
+      };
+      // 追加ボタン（モーダル内）で入力値取得（例: アラート表示）
+      document.getElementById('submitBtn').onclick = function() {
+        const item = document.getElementById('itemInput').value;
+        alert('追加された品物: ' + item);
+        document.getElementById('modal').style.display = 'none';
+      };
+      document.getElementById('footerCloseBtn').onclick = function() {
+        document.getElementById('modal').style.display = 'none';
+      };
     </script>
   </body>
 </html>
