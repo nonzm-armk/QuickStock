@@ -149,6 +149,11 @@
           <div class="modal-content" style="position:relative;">
             <div class="modal-header">
               <span id="selectedKana" style="font-size:1.2em; margin-right:10px;"></span>
+              <!-- ここから追加 -->
+              <button type="button" id="modalCountMinus" class="btn btn-outline-secondary btn-sm" style="margin-right:4px;">－</button>
+              <span id="modalCountValue" style="min-width:24px;display:inline-block;text-align:center;">0</span>
+              <button type="button" id="modalCountPlus" class="btn btn-outline-secondary btn-sm" style="margin-right:10px;">＋</button>
+              <!-- ここまで追加 -->
               <button type="button" id="closeBtn" class="btn-close" aria-label="閉じる"></button>
             </div>
             <div class="modal-body">
@@ -348,21 +353,37 @@
         document.getElementById('buyAddBtn').style.display = 'block';
       });
 
-      // 追加ボタンでモーダル表示（ストック用）
-      document.getElementById('addBtn').onclick = function() {
-        document.getElementById('modal').style.display = 'block';
-        // 最初のセレクトの値を表示
-        const firstKana = document.querySelector('.kana-select-row select').value;
-        document.getElementById('selectedKana').textContent = firstKana;
-      };
+      // モーダル用カウント変数
+      let modalCount = 1; // ← 初期値を1に
 
-      // 追加ボタンでモーダル表示（買うもの用）
-      document.getElementById('buyAddBtn').onclick = function() {
+      // モーダルを開くときにカウント初期化
+      function openModal() {
         document.getElementById('modal').style.display = 'block';
         // 最初のセレクトの値を表示
         const firstKana = document.querySelector('.kana-select-row select').value;
         document.getElementById('selectedKana').textContent = firstKana;
-        // 「買うもの」タブから追加する場合は、countを0にする（submitBtnの処理で対応済み）
+        // カウント初期化
+        modalCount = 1; // ← ここも1に
+        document.getElementById('modalCountValue').textContent = modalCount;
+        document.getElementById('itemInput').value = "";
+        // セレクトリセット
+        document.querySelectorAll('.kana-select-row select').forEach(select => {
+          select.selectedIndex = 0;
+        });
+      }
+
+      document.getElementById('addBtn').onclick = openModal;
+      document.getElementById('buyAddBtn').onclick = openModal;
+
+      // カウント＋ボタン
+      document.getElementById('modalCountPlus').onclick = function() {
+        modalCount++;
+        document.getElementById('modalCountValue').textContent = modalCount;
+      };
+      // カウント－ボタン
+      document.getElementById('modalCountMinus').onclick = function() {
+        if (modalCount > 1) modalCount--; // ← 1未満にならないように
+        document.getElementById('modalCountValue').textContent = modalCount;
       };
 
       // 閉じるボタンでモーダル非表示
@@ -387,8 +408,8 @@
           alert('品物名を入力してください');
           return;
         }
-        // 既存リストに追加（count: 0 で追加）
-        stockItems.push({ name: item, furigana: selectedKana, count: 0 });
+        // 既存リストに追加（count: modalCount で追加）
+        stockItems.push({ name: item, furigana: selectedKana, count: modalCount });
         renderStockList();
         // 入力欄と選択状態をリセット
         document.getElementById('itemInput').value = "";
@@ -396,6 +417,8 @@
           select.selectedIndex = 0;
         });
         document.getElementById('selectedKana').textContent = "";
+        modalCount = 1; // ← ここも1に
+        document.getElementById('modalCountValue').textContent = modalCount;
         document.getElementById('modal').style.display = 'none';
       };
       document.getElementById('footerCloseBtn').onclick = function() {
