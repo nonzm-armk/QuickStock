@@ -139,10 +139,12 @@
       </div>
 
       <!-- 追加ボタン -->
-      <button id="addBtn" class="add-button">追加</button>
+      <button id="addBtn" class="add-button" style="right: 20px; display: block;">追加</button>
+      <!-- 追加ボタン（買うもの用・色を変える） -->
+      <button id="buyAddBtn" class="add-button" style="background-color: #32cd32; color: white; right: 20px; display: none;">追加</button>
 
       <!-- モーダル本体 -->
-      <div class="modal" id="modal" tabindex="-1" style="display:block; background:rgba(0,0,0,0.5);">
+      <div class="modal" id="modal" tabindex="-1" style="display:none; background:rgba(0,0,0,0.5);">
         <div class="modal-dialog">
           <div class="modal-content" style="position:relative;">
             <div class="modal-header">
@@ -324,18 +326,22 @@
 
       // 「ストック」タブをクリックしたときの処理
       tabStock.addEventListener("click", () => {
-        tabStock.classList.add("header-active");      // ストックタブをアクティブに
-        tabBuy.classList.remove("header-active");     // 買うものタブのアクティブを外す
-        stockContent.classList.add("active");         // ストック内容を表示
-        buyContent.classList.remove("active");        // 買うもの内容を非表示
+        tabStock.classList.add("header-active");
+        tabBuy.classList.remove("header-active");
+        stockContent.classList.add("active");
+        buyContent.classList.remove("active");
+        document.getElementById('addBtn').style.display = 'block';
+        document.getElementById('buyAddBtn').style.display = 'none';
       });
 
       // 「買うもの」タブをクリックしたときの処理
       tabBuy.addEventListener("click", () => {
-        tabBuy.classList.add("header-active");        // 買うものタブをアクティブに
-        tabStock.classList.remove("header-active");   // ストックタブのアクティブを外す
-        buyContent.classList.add("active");           // 買うもの内容を表示
-        stockContent.classList.remove("active");      // ストック内容を非表示
+        tabBuy.classList.add("header-active");
+        tabStock.classList.remove("header-active");
+        buyContent.classList.add("active");
+        stockContent.classList.remove("active");
+        document.getElementById('addBtn').style.display = 'none';
+        document.getElementById('buyAddBtn').style.display = 'block';
       });
 
       // 追加ボタンでモーダル表示
