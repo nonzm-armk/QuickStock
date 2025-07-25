@@ -352,6 +352,21 @@
       // 追加ボタン（モーダル内）で入力値取得（例: アラート表示）
       document.getElementById('submitBtn').onclick = function() {
         const item = document.getElementById('itemInput').value;
+        // どのセレクトボックスも選択されていないかチェック
+        let selectedKana = "";
+        document.querySelectorAll('.kana-select-row select').forEach(select => {
+          if (select.value && select.value !== "") {
+            selectedKana = select.value;
+          }
+        });
+        if (!selectedKana) {
+          alert('行（カナ）を選択してください');
+          return;
+        }
+        if (!item) {
+          alert('品物名を入力してください');
+          return;
+        }
         alert('追加された品物: ' + item);
         document.getElementById('modal').style.display = 'none';
       };
