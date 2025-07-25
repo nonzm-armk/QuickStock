@@ -262,19 +262,23 @@
         const buyContentDiv = document.querySelector("#buy-content .px-3.pt-3");
         buyContentDiv.innerHTML = "";
 
+        // ストックタブにはcountが1以上のものだけ表示
         stockItems.forEach((item, idx) => {
-          if (item.furigana !== currentFurigana) {
-            currentFurigana = item.furigana;
-            container.innerHTML += `<div>${currentFurigana}</div>`;
+          if (item.count > 0) {
+            if (item.furigana !== currentFurigana) {
+              currentFurigana = item.furigana;
+              container.innerHTML += `<div>${currentFurigana}</div>`;
+            }
+            container.innerHTML += `
+              <div class="item-controls">
+                ・${item.name} <span class="badge bg-light text-dark">×${item.count}</span>
+                <button class="btn btn-danger btn-sm plus-btn" data-index="${idx}">＋</button>
+                <button class="btn btn-primary btn-sm">－</button>
+              </div>
+            `;
           }
-          container.innerHTML += `
-            <div class="item-controls">
-              ・${item.name} <span class="badge bg-light text-dark">×${item.count}</span>
-              <button class="btn btn-danger btn-sm plus-btn" data-index="${idx}">＋</button>
-              <button class="btn btn-primary btn-sm">－</button>
-            </div>
-          `;
 
+          // 買うものリストにはcountが0のものだけ表示
           if (item.count === 0) {
             buyContentDiv.innerHTML += `
               <div style="display:flex;align-items:center;gap:5px;">
