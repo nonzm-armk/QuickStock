@@ -146,14 +146,15 @@
         <div class="modal-dialog">
           <div class="modal-content" style="position:relative;">
             <div class="modal-header">
-              
+              <span id="selectedKana" style="font-size:1.2em; margin-right:10px;"></span>
               <button type="button" id="closeBtn" class="btn-close" aria-label="閉じる"></button>
             </div>
             <div class="modal-body">
               <input type="text" id="itemInput" class="form-control" placeholder="品物名を入力">
               <!-- ここにセレクトボックスを追加 -->
-              <div class="kana-select-row mt-3" style="display: flex; gap: 8px; margin-bottom: 8px;">
+              <div class="kana-select-row mt-3" style="display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
                 <select>
+                  <option value="" disabled selected>ア行</option>
                   <option value="ア">ア</option>
                   <option value="イ">イ</option>
                   <option value="ウ">ウ</option>
@@ -161,6 +162,7 @@
                   <option value="オ">オ</option>
                 </select>
                 <select>
+                  <option value="" disabled selected>カ行</option>
                   <option value="カ">カ</option>
                   <option value="キ">キ</option>
                   <option value="ク">ク</option>
@@ -168,6 +170,7 @@
                   <option value="コ">コ</option>
                 </select>
                 <select>
+                  <option value="" disabled selected>サ行</option>
                   <option value="サ">サ</option>
                   <option value="シ">シ</option>
                   <option value="ス">ス</option>
@@ -175,6 +178,7 @@
                   <option value="ソ">ソ</option>
                 </select>
                 <select>
+                  <option value="" disabled selected>タ行</option>
                   <option value="タ">タ</option>
                   <option value="チ">チ</option>
                   <option value="ツ">ツ</option>
@@ -182,13 +186,17 @@
                   <option value="ト">ト</option>
                 </select>
                 <select>
+                  <option value="" disabled selected>ナ行</option>
                   <option value="ナ">ナ</option>
                   <option value="ニ">ニ</option>
                   <option value="ヌ">ヌ</option>
                   <option value="ネ">ネ</option>
                   <option value="ノ">ノ</option>
                 </select>
+              </div>
+              <div class="kana-select-row mt-1" style="display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
                 <select>
+                  <option value="" disabled selected>ハ行</option>
                   <option value="ハ">ハ</option>
                   <option value="ヒ">ヒ</option>
                   <option value="フ">フ</option>
@@ -196,6 +204,7 @@
                   <option value="ホ">ホ</option>
                 </select>
                 <select>
+                  <option value="" disabled selected>マ行</option>
                   <option value="マ">マ</option>
                   <option value="ミ">ミ</option>
                   <option value="ム">ム</option>
@@ -203,11 +212,13 @@
                   <option value="モ">モ</option>
                 </select>
                 <select>
+                  <option value="" disabled selected>ヤ行</option>
                   <option value="ヤ">ヤ</option>
                   <option value="ユ">ユ</option>
                   <option value="ヨ">ヨ</option>
                 </select>
                 <select>
+                  <option value="" disabled selected>ラ行</option>
                   <option value="ラ">ラ</option>
                   <option value="リ">リ</option>
                   <option value="ル">ル</option>
@@ -215,6 +226,7 @@
                   <option value="ロ">ロ</option>
                 </select>
                 <select>
+                  <option value="" disabled selected>ワ行</option>
                   <option value="ワ">ワ</option>
                 </select>
               </div>
@@ -329,6 +341,9 @@
       // 追加ボタンでモーダル表示
       document.getElementById('addBtn').onclick = function() {
         document.getElementById('modal').style.display = 'block';
+        // 最初のセレクトの値を表示
+        const firstKana = document.querySelector('.kana-select-row select').value;
+        document.getElementById('selectedKana').textContent = firstKana;
       };
       // 閉じるボタンでモーダル非表示
       document.getElementById('closeBtn').onclick = function() {
@@ -343,6 +358,13 @@
       document.getElementById('footerCloseBtn').onclick = function() {
         document.getElementById('modal').style.display = 'none';
       };
+
+      // セレクトボックスの選択でmodal-headerに表示
+      document.querySelectorAll('.kana-select-row select').forEach(select => {
+        select.addEventListener('change', function() {
+          document.getElementById('selectedKana').textContent = this.value;
+        });
+      });
     </script>
   </body>
 </html>
