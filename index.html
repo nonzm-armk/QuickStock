@@ -263,6 +263,8 @@
         { name: "ルーズリーフ", furigana: "ラ", count: 3 }
       ];
 
+      let deleteMode = false; // 削除モードフラグ
+
       // アイテムリストを描画する関数
       function renderStockList() {
         const container = document.getElementById("stock-list");
@@ -294,7 +296,9 @@
             buyContentDiv.innerHTML += `
               <div style="display:flex;align-items:center;gap:5px;">
                 ・${item.name}
-                <button class="btn btn-success btn-sm buy-done-btn" data-index="${idx}">買った</button>
+                <button class="btn btn-${deleteMode ? 'danger' : 'success'} btn-sm ${deleteMode ? 'delete-item-btn' : 'buy-done-btn'}" data-index="${idx}">
+                  ${deleteMode ? '削除' : '買った'}
+                </button>
               </div>
             `;
           }
@@ -321,13 +325,24 @@
         });
 
         // 「買った」ボタンのイベントリスナーを追加
-        document.querySelectorAll('.buy-done-btn').forEach(btn => {
-          btn.addEventListener('click', function() {
-            const idx = this.getAttribute('data-index');
-            stockItems[idx].count = 1;
-            renderStockList();
+        if (!deleteMode) {
+          document.querySelectorAll('.buy-done-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+              const idx = this.getAttribute('data-index');
+              stockItems[idx].count = 1;
+              renderStockList();
+            });
           });
-        });
+        } else {
+          // 削除ボタンのイベントリスナー
+          document.querySelectorAll('.delete-item-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+              const idx = this.getAttribute('data-index');
+              stockItems.splice(idx, 1);
+              renderStockList();
+            });
+          });
+        }
       }
 
       // 初期表示
@@ -437,6 +452,12 @@
           document.getElementById('selectedKana').textContent = this.value;
         });
       });
+
+      // 削除モード切り替え
+      document.getElementById('deleteBtn').onclick = function() {
+        deleteMode = !deleteMode;
+        renderStockList();
+      };
     </script>
   </body>
 </html>
