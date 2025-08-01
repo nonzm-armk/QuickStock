@@ -206,12 +206,8 @@
 
       <!-- ストックタブ内容 -->
       <div id="stock-content" class="tab-content active">
-        <!-- 検索 -->
-        <div class="search-box">
-          <input type="text" class="form-control" placeholder="検索" />
-        </div>
         <!-- アイテムリスト -->
-        <div class="px-3" id="stock-list">
+        <div class="px-3 pt-3" id="stock-list">
           <!-- ここにJSでアイテムリストを描画 -->
         </div>
       </div>
@@ -406,9 +402,17 @@
               </div>
             `;
           }
+        });
 
+        // 買うものリストのカナ順表示のため、countが0のアイテムを再ソート
+        let buyCurrentFurigana = "";
+        stockItems.forEach((item, idx) => {
           // 買うものリストにはcountが0のものだけ表示
           if (item.count === 0) {
+            if (item.furigana !== buyCurrentFurigana) {
+              buyCurrentFurigana = item.furigana;
+              buyContentDiv.innerHTML += `<div>${buyCurrentFurigana}</div>`;
+            }
             buyContentDiv.innerHTML += `
               <div style="display:flex;align-items:center;gap:5px;">
                 ・${item.name}
