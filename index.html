@@ -349,6 +349,7 @@
       ];
 
       let deleteMode = false; // 削除モードフラグ
+      let isFromBuyTab = false; // 買うものタブからモーダルを開いたかのフラグ
 
       // カナ順ソート用の関数
       function sortItemsByKana() {
@@ -494,14 +495,36 @@
       let modalCount = 1; // ← 初期値を1に
 
       // モーダルを開くときにカウント初期化
-      function openModal() {
+      function openModal(fromBuyTab = false) {
+        isFromBuyTab = fromBuyTab;
         document.getElementById('modal').style.display = 'block';
+        
         // 最初のセレクトの値を表示
         const firstKana = document.querySelector('.kana-select-row select').value;
         document.getElementById('selectedKana').textContent = firstKana;
-        // カウント初期化
-        modalCount = 1; // ← ここも1に
-        document.getElementById('modalCountValue').textContent = modalCount;
+        
+        // カウント関連の表示制御
+        const countControls = [
+          document.getElementById('modalCountMinus'),
+          document.getElementById('modalCountValue'),
+          document.getElementById('modalCountPlus')
+        ];
+        
+        if (isFromBuyTab) {
+          // 買うものタブからの場合はカウント部分を非表示
+          countControls.forEach(element => {
+            element.style.display = 'none';
+          });
+        } else {
+          // ストックタブからの場合はカウント部分を表示
+          countControls.forEach(element => {
+            element.style.display = '';
+          });
+          // カウント初期化
+          modalCount = 1;
+          document.getElementById('modalCountValue').textContent = modalCount;
+        }
+        
         document.getElementById('itemInput').value = "";
         // セレクトリセット
         document.querySelectorAll('.kana-select-row select').forEach(select => {
@@ -509,8 +532,8 @@
         });
       }
 
-      document.getElementById('addBtn').onclick = openModal;
-      document.getElementById('buyAddBtn').onclick = openModal;
+      document.getElementById('addBtn').onclick = () => openModal(false);
+      document.getElementById('buyAddBtn').onclick = () => openModal(true);
 
       // カウント＋ボタン
       document.getElementById('modalCountPlus').onclick = function() {
@@ -545,8 +568,59 @@
           alert('品物名を入力してください');
           return;
         }
-        // 既存リストに追加（count: modalCount で追加）
-        stockItems.push({ name: item, furigana: selectedKana, count: modalCount });
+        
+        // 重複検知: 同じ名前のアイテムが既に存在するかをチェック
+        const existingItem = stockItems.find(stockItem => 
+          stockItem.name.toLowerCase() === item.toLowerCase()
+        );
+        
+        if (existingItem) {
+          // 重複が検知された場合、確認メッセージを表示
+          const confirmMessage = `「${item}」は既にリストに存在します。既存のアイテムの数量を増やしますか？\n\n「はい」：既存のアイテムの数量を増やす\n「いいえ」：新しいアイテムとして追加`;
+          const shouldUpdateExisting = confirm(confirmMessage);
+          
+          if (shouldUpdateExisting) {
+            // 既存アイテムの数量を増加
+            if (isFromBuyTab) {
+              // 買うものタブから追加の場合で既存アイテムのcountが0の場合は1に設定
+              if (existingItem.count === 0) {
+                existingItem.count = 1;
+              } else {
+                existingItem.count += 1;
+              }
+            } else {
+              // ストックタブから追加の場合はmodalCount分を追加
+              existingItem.count += modalCount;
+            }
+            
+            // ソートして表示更新
+            sortItemsByKana();
+            renderStockList();
+            
+            // 入力欄と選択状態をリセット
+            document.getElementById('itemInput').value = "";
+            document.querySelectorAll('.kana-select-row select').forEach(select => {
+              select.selectedIndex = 0;
+            });
+            document.getElementById('selectedKana').textContent = "";
+            
+            // ストックタブの場合のみカウント初期化
+            if (!isFromBuyTab) {
+              modalCount = 1;
+              document.getElementById('modalCountValue').textContent = modalCount;
+            }
+            
+            document.getElementById('modal').style.display = 'none';
+            return;
+          }
+          // 「いいえ」が選択された場合は、新しいアイテムとして追加する処理を続行
+        }
+        
+        // 新しいアイテムとして追加（重複がない場合、または重複があるが新規追加を選択した場合）
+        const itemCount = isFromBuyTab ? 0 : modalCount;
+        
+        // 既存リストに追加
+        stockItems.push({ name: item, furigana: selectedKana, count: itemCount });
         // カナ順でソート
         sortItemsByKana();
         renderStockList();
@@ -556,8 +630,13 @@
           select.selectedIndex = 0;
         });
         document.getElementById('selectedKana').textContent = "";
-        modalCount = 1; // ← ここも1に
-        document.getElementById('modalCountValue').textContent = modalCount;
+        
+        // ストックタブの場合のみカウント初期化
+        if (!isFromBuyTab) {
+          modalCount = 1;
+          document.getElementById('modalCountValue').textContent = modalCount;
+        }
+        
         document.getElementById('modal').style.display = 'none';
       };
       document.getElementById('footerCloseBtn').onclick = function() {
