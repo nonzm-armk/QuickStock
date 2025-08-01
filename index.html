@@ -21,7 +21,7 @@
         margin: 0;
         border-radius: 0;
         box-shadow: none;
-        padding-bottom: 30px;
+        padding-bottom: calc(100px + env(safe-area-inset-bottom));
         position: relative;
         min-height: 100vh;
       }
@@ -35,6 +35,10 @@
           border-radius: 10px;
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
           min-height: 500px;
+          padding-bottom: 30px;
+        }
+        .add-button {
+          bottom: 20px !important;
         }
       }
       .header {
@@ -74,7 +78,7 @@
       }
       .add-button {
         position: absolute;
-        bottom: 20px;
+        bottom: calc(70px + env(safe-area-inset-bottom));
         right: 20px;
         background-color: #ff69b4;
         color: white;
@@ -221,7 +225,7 @@
           <div>・付箋</div>
         </div>
         <!-- ここから追加 -->
-        <button id="deleteBtn" class="add-button" style="background-color: #ff6347; color: white; left: 20px; bottom: 20px; display: block; position: absolute;">削除</button>
+        <button id="deleteBtn" class="add-button" style="background-color: #ff6347; color: white; left: 20px; bottom: calc(70px + env(safe-area-inset-bottom)); display: block; position: absolute;">削除</button>
         <!-- ここまで追加 -->
       </div>
 
@@ -346,6 +350,36 @@
 
       let deleteMode = false; // 削除モードフラグ
 
+      // カナ順ソート用の関数
+      function sortItemsByKana() {
+        // 五十音順の順序を定義
+        const kanaOrder = [
+          'ア', 'イ', 'ウ', 'エ', 'オ',
+          'カ', 'キ', 'ク', 'ケ', 'コ',
+          'サ', 'シ', 'ス', 'セ', 'ソ',
+          'タ', 'チ', 'ツ', 'テ', 'ト',
+          'ナ', 'ニ', 'ヌ', 'ネ', 'ノ',
+          'ハ', 'ヒ', 'フ', 'ヘ', 'ホ',
+          'マ', 'ミ', 'ム', 'メ', 'モ',
+          'ヤ', 'ユ', 'ヨ',
+          'ラ', 'リ', 'ル', 'レ', 'ロ',
+          'ワ'
+        ];
+
+        stockItems.sort((a, b) => {
+          // まずふりがなでソート
+          const aIndex = kanaOrder.indexOf(a.furigana);
+          const bIndex = kanaOrder.indexOf(b.furigana);
+          
+          if (aIndex !== bIndex) {
+            return aIndex - bIndex;
+          }
+          
+          // ふりがなが同じ場合は名前でソート
+          return a.name.localeCompare(b.name, 'ja');
+        });
+      }
+
       // アイテムリストを描画する関数
       function renderStockList() {
         const container = document.getElementById("stock-list");
@@ -427,6 +461,7 @@
       }
 
       // 初期表示
+      sortItemsByKana(); // 初期データもカナ順でソート
       renderStockList();
 
       // タブ要素とコンテンツ要素を取得
@@ -512,6 +547,8 @@
         }
         // 既存リストに追加（count: modalCount で追加）
         stockItems.push({ name: item, furigana: selectedKana, count: modalCount });
+        // カナ順でソート
+        sortItemsByKana();
         renderStockList();
         // 入力欄と選択状態をリセット
         document.getElementById('itemInput').value = "";
