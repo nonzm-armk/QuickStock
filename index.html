@@ -46,26 +46,79 @@
         cursor: pointer;
       }
       .header-left {
-        background-color: #66ccff;
+        background-color: #ffcc99;
         flex: 1;
-        padding: 10px;
+        padding: 15px 10px;
         font-weight: bold;
         font-size: 1.5rem;
         text-align: center;
-        transition: background 0.2s;
+        transition: all 0.3s ease;
+        border-radius: 20px 20px 0 0;
+        margin: 5px 2px 0 5px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        position: relative;
       }
       .header-right {
-        background-color: #ffd700;
+        background-color: #c8f0c8;
         flex: 1;
-        padding: 10px;
+        padding: 15px 10px;
         font-weight: bold;
         font-size: 1.5rem;
         text-align: center;
-        transition: background 0.2s;
+        transition: all 0.3s ease;
+        border-radius: 20px 20px 0 0;
+        margin: 5px 5px 0 2px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        position: relative;
       }
       .header-active {
-        background-color: #ffa500 !important; /* オレンジ */
-        color: #fff;
+        background-color: #ff8c00 !important; /* オレンジ色 */
+        color: #fff !important; /* 白文字 */
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15) !important;
+        transform: translateY(-2px);
+        z-index: 10;
+      }
+      
+      /* 吹き出しの三角形部分 */
+      .header-active::after {
+        content: '';
+        position: absolute;
+        bottom: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 0;
+        border-left: 12px solid transparent;
+        border-right: 12px solid transparent;
+        border-top: 8px solid #ff8c00;
+        z-index: 11;
+      }
+      
+      /* より具体的なセレクタで確実に適用 */
+      #tab-stock {
+        background-color: #ffd0dc !important; /* より薄いピンク */
+      }
+      
+      #tab-stock.header-active {
+        background-color: #ff69b4 !important; /* 濃いピンク */
+        color: #fff !important;
+      }
+      
+      #tab-stock.header-active::after {
+        border-top: 8px solid #ff69b4 !important; /* 吹き出し三角形も濃いピンク */
+      }
+      
+      #tab-buy {
+        background-color: #c8f0c8 !important; /* 薄い黄緑 */
+      }
+      
+      #tab-buy.header-active {
+        background-color: #32cd32 !important; /* 濃い黄緑 */
+        color: #fff !important;
+      }
+      
+      #tab-buy.header-active::after {
+        border-top: 8px solid #32cd32 !important; /* 吹き出し三角形も濃い黄緑 */
       }
       .item-controls {
         display: flex;
@@ -468,6 +521,10 @@
       // 初期表示
       sortItemsByKana(); // 初期データもカナ順でソート
       renderStockList();
+      
+      // 初期状態でストックタブを濃いピンク色に設定
+      document.getElementById('tab-stock').style.backgroundColor = '#ff69b4';
+      document.getElementById('tab-stock').style.color = '#fff';
 
       // タブ要素とコンテンツ要素を取得
       const tabStock = document.getElementById("tab-stock");
@@ -483,6 +540,12 @@
         buyContent.classList.remove("active");
         document.getElementById('addBtn').style.display = 'block';
         document.getElementById('buyAddBtn').style.display = 'none';
+        
+        // 強制的に濃いピンク色を設定（選択中）・薄い黄緑を設定（非選択）
+        tabStock.style.backgroundColor = '#ff69b4';
+        tabStock.style.color = '#fff';
+        tabBuy.style.backgroundColor = '#c8f0c8';
+        tabBuy.style.color = '';
       });
 
       // 「買うもの」タブをクリックしたときの処理
@@ -493,6 +556,12 @@
         stockContent.classList.remove("active");
         document.getElementById('addBtn').style.display = 'none';
         document.getElementById('buyAddBtn').style.display = 'block';
+        
+        // 強制的に濃い黄緑色を設定（選択中）・薄いピンク色を設定（非選択）
+        tabBuy.style.backgroundColor = '#32cd32';
+        tabBuy.style.color = '#fff';
+        tabStock.style.backgroundColor = '#ffd0dc';
+        tabStock.style.color = '';
       });
 
       // モーダル用カウント変数
@@ -657,6 +726,17 @@
       // 削除モード切り替え
       document.getElementById('deleteBtn').onclick = function() {
         deleteMode = !deleteMode;
+        const deleteBtn = document.getElementById('deleteBtn');
+        
+        if (deleteMode) {
+          deleteBtn.textContent = '戻る';
+          deleteBtn.style.backgroundColor = '#ffd700'; // 黄色
+          deleteBtn.style.color = '#000000'; // 黒色
+        } else {
+          deleteBtn.textContent = '削除';
+          deleteBtn.style.backgroundColor = '#ff6347'; // 元の赤色
+        }
+        
         renderStockList();
       };
     </script>
