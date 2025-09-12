@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>在庫管理</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore-compat.js"></script>
+    <style>
+      body {
+        background-color: #87cefa; /* 水色背景 */
+        margin: 0;
+        padding: 0;
+      }
+      .main {
+        width: 100vw;
+        max-width: none;
+        background-color: #fff; /* 背景を白に */
+        margin: 0;
+        border-radius: 0;
+        box-shadow: none;
+        padding-bottom: calc(150px + env(safe-area-inset-bottom));
+        position: relative;
+        min-height: 100vh;
+      }
+      
+      /* タブレット以上の画面サイズでは中央配置 */
+      @media (min-width: 768px) {
+        .main {
+          width: 90vw;
+          max-width: 600px;
+          margin: 0 auto;
+          border-radius: 10px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+          min-height: 500px;
+          padding-bottom: 30px;
+        }
+        .add-button {
+          bottom: 20px !important;
+        }
+      }
+      .header {
+        display: flex;
+        cursor: pointer;
+      }
+      .header-left {
+        background-color: #ffcc99;
+        flex: 1;
+        padding: 15px 10px;
+        font-weight: bold;
+        font-size: 1.5rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        border-radius: 20px 20px 0 0;
+        margin: 5px 2px 0 5px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        position: relative;
+      }
+      .header-right {
+        background-color: #c8f0c8;
+        flex: 1;
+        padding: 15px 10px;
+        font-weight: bold;
+        font-size: 1.5rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        border-radius: 20px 20px 0 0;
+        margin: 5px 5px 0 2px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        position: relative;
+      }
+      .header-active {
+        background-color: #ff8c00 !important; /* オレンジ色 */
+        color: #fff !important; /* 白文字 */
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15) !important;
+        transform: translateY(-2px);
+        z-index: 10;
+      }
+      
+      /* 吹き出しの三角形部分 */
+      .header-active::after {
+        content: '';
+        position: absolute;
+        bottom: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 0;
+        border-left: 12px solid transparent;
+        border-right: 12px solid transparent;
+        border-top: 8px solid #ff8c00;
+        z-index: 11;
+      }
+      
+      /* より具体的なセレクタで確実に適用 */
+      #tab-stock {
+        background-color: #ffd0dc !important; /* より薄いピンク */
+      }
+      
+      #tab-stock.header-active {
+        background-color: #ff69b4 !important; /* 濃いピンク */
+        color: #fff !important;
+      }
+      
+      #tab-stock.header-active::after {
+        border-top: 8px solid #ff69b4 !important; /* 吹き出し三角形も濃いピンク */
+      }
+      
+      #tab-buy {
+        background-color: #c8f0c8 !important; /* 薄い黄緑 */
+      }
+      
+      #tab-buy.header-active {
+        background-color: #32cd32 !important; /* 濃い黄緑 */
+        color: #fff !important;
+      }
+      
+      #tab-buy.header-active::after {
+        border-top: 8px solid #32cd32 !important; /* 吹き出し三角形も濃い黄緑 */
+      }
+      .item-controls {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-bottom: 10px;
+      }
+      .search-box {
+        margin: 10px;
+      }
+      .add-button {
+        position: absolute;
+        bottom: calc(120px + env(safe-area-inset-bottom));
+        right: 20px;
+        background-color: #ff69b4;
+        color: white;
+        border-radius: 50%;
+        width: 70px;
+        height: 70px;
+        font-size: 1.2rem;
+        border: none;
+        touch-action: manipulation;
+        user-select: none;
+      }
+      .tab-content {
+        display: none;
+      }
+      .tab-content.active {
+        display: block;
+      }
+      .orange-bg {
+        background-color: #ffa500 !important;
+        color: #fff;
+        border-radius: 10px;
+        padding-bottom: 30px;
+        min-height: 400px;
+      }
+      .buy-done-btn {
+        background-color: #2ECC71 !important;
+        border-color: #2ECC71 !important;
+        color: #fff !important;
+      }
+      /* モーダルのスタイル */
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1050;
+      }
+      .modal-dialog {
+        margin: 10px;
+        width: calc(100vw - 20px);
+        max-width: 500px;
+        margin: 20px auto;
+      }
+      .modal-content {
+        background: #fff;
+        padding: 15px;
+        border-radius: 8px;
+        position: relative;
+        max-height: calc(100vh - 40px);
+        overflow-y: auto;
+      }
+      
+      /* スマホ向けモーダル調整 */
+      @media (max-width: 767px) {
+        .modal-dialog {
+          margin: 10px;
+          width: calc(100vw - 20px);
+        }
+        .modal-content {
+          padding: 15px;
+          max-height: calc(100vh - 20px);
+        }
+        .kana-select-row select {
+          font-size: 16px !important;
+          padding: 8px !important;
+          min-height: 44px;
+        }
+        #itemInput {
+          font-size: 16px !important;
+          padding: 12px !important;
+          min-height: 44px;
+        }
+        .modal-footer .btn {
+          min-height: 44px;
+          font-size: 16px;
+          padding: 10px 20px;
+        }
+        #modalCountMinus, #modalCountPlus {
+          min-height: 44px;
+          min-width: 44px;
+          font-size: 18px;
+        }
+      }
+      #buy-content .px-3.pt-3 > div {
+        margin-bottom: 16px;
+      }
+      
+      /* スマホ向けボタン調整 */
+      @media (max-width: 767px) {
+        .btn-sm {
+          min-height: 40px;
+          min-width: 40px;
+          font-size: 14px;
+        }
+        .item-controls {
+          gap: 8px;
+          margin-bottom: 15px;
+        }
+        .search-box input {
+          font-size: 16px;
+          padding: 12px;
+          min-height: 44px;
+        }
+        .header-left, .header-right {
+          padding: 15px 10px;
+          font-size: 1.3rem;
+        }
+        #buy-content .px-3.pt-3 > div {
+          margin-bottom: 20px;
+          font-size: 1.1rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="main">
+      <!-- ヘッダー -->
+      <div class="header">
+        <div id="tab-stock" class="header-left header-active">ストック</div>
+        <div id="tab-buy" class="header-right">買うもの</div>
+      </div>
+
+      <!-- ストックタブ内容 -->
+      <div id="stock-content" class="tab-content active">
+        <!-- アイテムリスト -->
+        <div class="px-3 pt-3" id="stock-list">
+          <!-- ここにJSでアイテムリストを描画 -->
+        </div>
+      </div>
+
+      <!-- 買うものタブ内容 -->
+      <div id="buy-content" class="tab-content ">
+        <div class="px-3 pt-3">
+          <!-- ここにJSでFirestoreからの買うものリストを描画 -->
+        </div>
+        <!-- ここから追加 -->
+        <button id="deleteBtn" class="add-button" style="background-color: #ff6347; color: white; left: 20px; bottom: calc(120px + env(safe-area-inset-bottom)); display: block; position: absolute;">削除</button>
+        <!-- ここまで追加 -->
+      </div>
+
+      <!-- 追加ボタン -->
+      <button id="addBtn" class="add-button" style="right: 20px; display: block;">追加</button>
+      <!-- 追加ボタン（買うもの用・色を変える） -->
+      <button id="buyAddBtn" class="add-button" style="background-color: #32cd32; color: white; right: 20px; display: none;">追加</button>
+
+      <!-- モーダル本体 -->
+      <div class="modal" id="modal" tabindex="-1" style="display:none; background:rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+          <div class="modal-content" style="position:relative;">
+            <div class="modal-header">
+              <span id="selectedKana" style="font-size:1.2em; margin-right:10px;"></span>
+              <!-- ここから追加 -->
+              <button type="button" id="modalCountMinus" class="btn btn-outline-secondary btn-sm" style="margin-right:4px;">－</button>
+              <span id="modalCountValue" style="min-width:24px;display:inline-block;text-align:center;">0</span>
+              <button type="button" id="modalCountPlus" class="btn btn-outline-secondary btn-sm" style="margin-right:10px;">＋</button>
+              <!-- ここまで追加 -->
+              <button type="button" id="closeBtn" class="btn-close" aria-label="閉じる"></button>
+            </div>
+            <div class="modal-body">
+              <input type="text" id="itemInput" class="form-control" placeholder="品物名を入力">
+              <!-- ここにセレクトボックスを追加 -->
+              <div class="kana-select-row mt-3" style="display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
+                <select>
+                  <option value="" disabled selected>ア行</option>
+                  <option value="ア">ア</option>
+                  <option value="イ">イ</option>
+                  <option value="ウ">ウ</option>
+                  <option value="エ">エ</option>
+                  <option value="オ">オ</option>
+                </select>
+                <select>
+                  <option value="" disabled selected>カ行</option>
+                  <option value="カ">カ</option>
+                  <option value="キ">キ</option>
+                  <option value="ク">ク</option>
+                  <option value="ケ">ケ</option>
+                  <option value="コ">コ</option>
+                </select>
+                <select>
+                  <option value="" disabled selected>サ行</option>
+                  <option value="サ">サ</option>
+                  <option value="シ">シ</option>
+                  <option value="ス">ス</option>
+                  <option value="セ">セ</option>
+                  <option value="ソ">ソ</option>
+                </select>
+                <select>
+                  <option value="" disabled selected>タ行</option>
+                  <option value="タ">タ</option>
+                  <option value="チ">チ</option>
+                  <option value="ツ">ツ</option>
+                  <option value="テ">テ</option>
+                  <option value="ト">ト</option>
+                </select>
+                <select>
+                  <option value="" disabled selected>ナ行</option>
+                  <option value="ナ">ナ</option>
+                  <option value="ニ">ニ</option>
+                  <option value="ヌ">ヌ</option>
+                  <option value="ネ">ネ</option>
+                  <option value="ノ">ノ</option>
+                </select>
+              </div>
+              <div class="kana-select-row mt-1" style="display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
+                <select>
+                  <option value="" disabled selected>ハ行</option>
+                  <option value="ハ">ハ</option>
+                  <option value="ヒ">ヒ</option>
+                  <option value="フ">フ</option>
+                  <option value="ヘ">ヘ</option>
+                  <option value="ホ">ホ</option>
+                </select>
+                <select>
+                  <option value="" disabled selected>マ行</option>
+                  <option value="マ">マ</option>
+                  <option value="ミ">ミ</option>
+                  <option value="ム">ム</option>
+                  <option value="メ">メ</option>
+                  <option value="モ">モ</option>
+                </select>
+                <select>
+                  <option value="" disabled selected>ヤ行</option>
+                  <option value="ヤ">ヤ</option>
+                  <option value="ユ">ユ</option>
+                  <option value="ヨ">ヨ</option>
+                </select>
+                <select>
+                  <option value="" disabled selected>ラ行</option>
+                  <option value="ラ">ラ</option>
+                  <option value="リ">リ</option>
+                  <option value="ル">ル</option>
+                  <option value="レ">レ</option>
+                  <option value="ロ">ロ</option>
+                </select>
+                <select>
+                  <option value="" disabled selected>ワ行</option>
+                  <option value="ワ">ワ</option>
+                </select>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <!-- モーダル内の追加ボタン -->
+              <button id="submitBtn" class="btn" style="background-color: #ff69b4; color: #fff;">追加</button>
+              <button type="button" class="btn btn-secondary" id="footerCloseBtn">閉じる</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Firebase設定モーダル -->
+    <div class="modal" id="configModal" tabindex="-1" style="display:none; background:rgba(0,0,0,0.8);">
+      <div class="modal-dialog">
+        <div class="modal-content" style="position:relative;">
+          <div class="modal-header">
+            <h5 class="modal-title">Firebase設定</h5>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="configInput" class="form-label">Firebase設定をカンマ区切りで入力してください：</label>
+              <small class="form-text text-muted">形式: apiKey,authDomain,projectId,storageBucket,messagingSenderId,appId</small>
+              <textarea id="configInput" class="form-control mt-2" rows="3" placeholder="例: AIzaSy...,example.firebaseapp.com,example-project,example.appspot.com,123456789,1:123:web:abc123"></textarea>
+            </div>
+            <div id="configError" class="alert alert-danger" style="display:none;"></div>
+            <div id="configSuccess" class="alert alert-success" style="display:none;"></div>
+          </div>
+          <div class="modal-footer">
+            <button id="testConfigBtn" class="btn btn-primary">接続テスト</button>
+            <button id="saveConfigBtn" class="btn btn-success" style="display:none;">保存</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let firebaseConfig = null;
+      let db = null;
+      let isConfigured = false;
+
+      // Firebase設定をlocalStorageから読み込む
+      function loadFirebaseConfig() {
+        const savedConfig = localStorage.getItem('firebaseConfig');
+        if (savedConfig) {
+          try {
+            firebaseConfig = JSON.parse(savedConfig);
+            return true;
+          } catch (error) {
+            console.error('保存された設定の読み込みに失敗:', error);
+            localStorage.removeItem('firebaseConfig');
+          }
+        }
+        return false;
+      }
+
+      // Firebase設定をlocalStorageに保存
+      function saveFirebaseConfig(config) {
+        localStorage.setItem('firebaseConfig', JSON.stringify(config));
+      }
+
+      // カンマ区切り文字列をFirebase設定オブジェクトに変換
+      function parseConfigString(configString) {
+        const parts = configString.split(',').map(part => part.trim());
+        if (parts.length !== 6) {
+          throw new Error('設定は6つの項目をカンマで区切って入力してください');
+        }
+        
+        return {
+          apiKey: parts[0],
+          authDomain: parts[1],
+          projectId: parts[2],
+          storageBucket: parts[3],
+          messagingSenderId: parts[4],
+          appId: parts[5]
+        };
+      }
+
+      // Firebase接続テスト
+      async function testFirebaseConnection(config) {
+        try {
+          // 一時的にFirebaseを初期化
+          const testApp = firebase.initializeApp(config, 'test-app');
+          const testDb = testApp.firestore();
+          
+          // 実際のitemsコレクションの取得を試行
+          await testDb.collection('items').limit(1).get();
+          
+          // テスト用アプリを削除
+          await testApp.delete();
+          
+          return true;
+        } catch (error) {
+          console.error('Firebase接続テストエラー:', error);
+          // テスト用アプリの削除を試行（エラーでも削除を試す）
+          try {
+            await firebase.app('test-app').delete();
+          } catch (deleteError) {
+            console.error('テストアプリ削除エラー:', deleteError);
+          }
+          throw error;
+        }
+      }
+
+      // Firebase初期化
+      function initializeFirebase(config) {
+        try {
+          firebase.initializeApp(config);
+          db = firebase.firestore();
+          isConfigured = true;
+          return true;
+        } catch (error) {
+          console.error('Firebase初期化エラー:', error);
+          throw error;
+        }
+      }
+
+      // 設定モーダルを表示
+      function showConfigModal() {
+        document.getElementById('configModal').style.display = 'block';
+        document.getElementById('configInput').value = '';
+        document.getElementById('configError').style.display = 'none';
+        document.getElementById('configSuccess').style.display = 'none';
+        document.getElementById('saveConfigBtn').style.display = 'none';
+      }
+
+      // エラーメッセージを表示
+      function showConfigError(message) {
+        const errorDiv = document.getElementById('configError');
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+        document.getElementById('configSuccess').style.display = 'none';
+      }
+
+      // 成功メッセージを表示
+      function showConfigSuccess() {
+        const successDiv = document.getElementById('configSuccess');
+        successDiv.textContent = '接続テストに成功しました！';
+        successDiv.style.display = 'block';
+        document.getElementById('configError').style.display = 'none';
+        document.getElementById('saveConfigBtn').style.display = 'inline-block';
+      }
+
+      // アプリの初期化
+      function initializeApp() {
+        // 保存された設定を読み込み
+        if (loadFirebaseConfig()) {
+          try {
+            initializeFirebase(firebaseConfig);
+            // メインアプリを開始
+            startMainApp();
+          } catch (error) {
+            console.error('Firebase初期化失敗:', error);
+            // 設定が無効な場合は再設定を促す
+            localStorage.removeItem('firebaseConfig');
+            showConfigModal();
+          }
+        } else {
+          // 設定が無い場合は設定モーダルを表示
+          showConfigModal();
+        }
+      }
+
+      // メインアプリを開始
+      function startMainApp() {
+        document.getElementById('configModal').style.display = 'none';
+        loadItemsFromFirestore();
+      }
+
+      // 設定テストボタンのイベントリスナー
+      document.getElementById('testConfigBtn').onclick = async function() {
+        const configString = document.getElementById('configInput').value.trim();
+        
+        if (!configString) {
+          showConfigError('設定を入力してください');
+          return;
+        }
+
+        try {
+          const config = parseConfigString(configString);
+          await testFirebaseConnection(config);
+          firebaseConfig = config;
+          showConfigSuccess();
+        } catch (error) {
+          if (error.message.includes('設定は6つの項目')) {
+            showConfigError(error.message);
+          } else {
+            showConfigError('Firebase接続に失敗しました。設定を確認してください。');
+          }
+        }
+      };
+
+      // 設定保存ボタンのイベントリスナー
+      document.getElementById('saveConfigBtn').onclick = function() {
+        if (firebaseConfig) {
+          saveFirebaseConfig(firebaseConfig);
+          try {
+            initializeFirebase(firebaseConfig);
+            startMainApp();
+          } catch (error) {
+            showConfigError('Firebase初期化に失敗しました');
+          }
+        }
+      };
+
+      // ページ読み込み時にアプリを初期化
+      window.addEventListener('load', initializeApp);
+
+      // アイテムデータをFirestoreから管理
+      let stockItems = [];
+
+      let deleteMode = false; // 削除モードフラグ
+      let isFromBuyTab = false; // 買うものタブからモーダルを開いたかのフラグ
+
+      // Firestoreからデータを読み込む関数
+      function loadItemsFromFirestore() {
+        db.collection("items")
+          .orderBy('name')  // 複合インデックス問題を回避するため一時的にnameのみでソート
+          .onSnapshot((querySnapshot) => {
+            stockItems = [];
+            querySnapshot.forEach((doc) => {
+              const data = doc.data();
+              stockItems.push({
+                id: doc.id,
+                name: data.name,
+                furigana: data.furigana,
+                count: data.count || 0
+              });
+            });
+            
+            // furiganaでソート（クライアント側）
+            stockItems.sort((a, b) => {
+              if (a.furigana !== b.furigana) {
+                return a.furigana.localeCompare(b.furigana);
+              }
+              return a.name.localeCompare(b.name);
+            });
+            
+            renderStockList();
+          }, (error) => {
+            console.error("Firestoreエラー:", error);
+            alert("データの取得に失敗しました: " + error.message);
+          });
+      }
+
+      // Firestoreにアイテムを追加する関数
+      async function addItemToFirestore(name, furigana, count) {
+        try {
+          await db.collection("items").add({
+            name: name,
+            furigana: furigana,
+            count: count,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        } catch (error) {
+          console.error("Error adding document: ", error);
+          alert("アイテムの追加に失敗しました");
+        }
+      }
+
+      // Firestoreのアイテムを更新する関数
+      async function updateItemInFirestore(itemId, count) {
+        try {
+          await db.collection("items").doc(itemId).update({
+            count: count,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        } catch (error) {
+          console.error("Error updating document: ", error);
+          alert("アイテムの更新に失敗しました");
+        }
+      }
+
+      // Firestoreからアイテムを削除する関数
+      async function deleteItemFromFirestore(itemId) {
+        try {
+          await db.collection("items").doc(itemId).delete();
+        } catch (error) {
+          console.error("Error removing document: ", error);
+          alert("アイテムの削除に失敗しました");
+        }
+      }
+
+      // アイテムリストを描画する関数
+      function renderStockList() {
+        const container = document.getElementById("stock-list");
+        container.innerHTML = "";
+        let currentFurigana = "";
+
+        // 買うものリストの要素を取得し、初期化
+        const buyContentDiv = document.querySelector("#buy-content .px-3.pt-3");
+        buyContentDiv.innerHTML = "";
+
+        // ストックタブにはcountが1以上のものだけ表示
+        stockItems.forEach((item, idx) => {
+          if (item.count > 0) {
+            if (item.furigana !== currentFurigana) {
+              currentFurigana = item.furigana;
+              container.innerHTML += `<div>${currentFurigana}</div>`;
+            }
+            container.innerHTML += `
+              <div class="item-controls">
+                ・${item.name} <span class="badge bg-light text-dark">×${item.count}</span>
+                <button class="btn btn-danger btn-sm plus-btn" data-index="${idx}">＋</button>
+                <button class="btn btn-primary btn-sm">－</button>
+              </div>
+            `;
+          }
+        });
+
+        // 買うものリストのカナ順表示のため、countが0のアイテムを再ソート
+        let buyCurrentFurigana = "";
+        stockItems.forEach((item, idx) => {
+          // 買うものリストにはcountが0のものだけ表示
+          if (item.count === 0) {
+            if (item.furigana !== buyCurrentFurigana) {
+              buyCurrentFurigana = item.furigana;
+              buyContentDiv.innerHTML += `<div>${buyCurrentFurigana}</div>`;
+            }
+            buyContentDiv.innerHTML += `
+              <div style="display:flex;align-items:center;gap:5px;">
+                ・${item.name}
+                <button class="btn btn-${deleteMode ? 'danger' : 'success'} btn-sm ${deleteMode ? 'delete-item-btn' : 'buy-done-btn'}" data-index="${idx}">
+                  ${deleteMode ? '削除' : '買った'}
+                </button>
+              </div>
+            `;
+          }
+        });
+
+        // 「＋」ボタンのイベントリスナーを追加
+        document.querySelectorAll('.plus-btn').forEach(btn => {
+          btn.addEventListener('click', function() {
+            const idx = this.getAttribute('data-index');
+            const item = stockItems[idx];
+            updateItemInFirestore(item.id, item.count + 1);
+          });
+        });
+
+        // 「－」ボタンのイベントリスナーを追加
+        document.querySelectorAll('.btn-primary').forEach((btn, i) => {
+          btn.addEventListener('click', function() {
+            const idx = this.previousElementSibling.getAttribute('data-index');
+            const item = stockItems[idx];
+            if (item.count > 0) {
+              updateItemInFirestore(item.id, item.count - 1);
+            }
+          });
+        });
+
+        // 「買った」ボタンのイベントリスナーを追加
+        if (!deleteMode) {
+          document.querySelectorAll('.buy-done-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+              const idx = this.getAttribute('data-index');
+              const item = stockItems[idx];
+              updateItemInFirestore(item.id, 1);
+            });
+          });
+        } else {
+          // 削除ボタンのイベントリスナー
+          document.querySelectorAll('.delete-item-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+              const idx = this.getAttribute('data-index');
+              const item = stockItems[idx];
+              deleteItemFromFirestore(item.id);
+            });
+          });
+        }
+      }
+
+      // 初期状態でストックタブを濃いピンク色に設定
+      document.getElementById('tab-stock').style.backgroundColor = '#ff69b4';
+      document.getElementById('tab-stock').style.color = '#fff';
+
+      // タブ要素とコンテンツ要素を取得
+      const tabStock = document.getElementById("tab-stock");
+      const tabBuy = document.getElementById("tab-buy");
+      const stockContent = document.getElementById("stock-content");
+      const buyContent = document.getElementById("buy-content");
+
+      // 「ストック」タブをクリックしたときの処理
+      tabStock.addEventListener("click", () => {
+        tabStock.classList.add("header-active");
+        tabBuy.classList.remove("header-active");
+        stockContent.classList.add("active");
+        buyContent.classList.remove("active");
+        document.getElementById('addBtn').style.display = 'block';
+        document.getElementById('buyAddBtn').style.display = 'none';
+        
+        // 強制的に濃いピンク色を設定（選択中）・薄い黄緑を設定（非選択）
+        tabStock.style.backgroundColor = '#ff69b4';
+        tabStock.style.color = '#fff';
+        tabBuy.style.backgroundColor = '#c8f0c8';
+        tabBuy.style.color = '';
+      });
+
+      // 「買うもの」タブをクリックしたときの処理
+      tabBuy.addEventListener("click", () => {
+        tabBuy.classList.add("header-active");
+        tabStock.classList.remove("header-active");
+        buyContent.classList.add("active");
+        stockContent.classList.remove("active");
+        document.getElementById('addBtn').style.display = 'none';
+        document.getElementById('buyAddBtn').style.display = 'block';
+        
+        // 強制的に濃い黄緑色を設定（選択中）・薄いピンク色を設定（非選択）
+        tabBuy.style.backgroundColor = '#32cd32';
+        tabBuy.style.color = '#fff';
+        tabStock.style.backgroundColor = '#ffd0dc';
+        tabStock.style.color = '';
+      });
+
+      // モーダル用カウント変数
+      let modalCount = 1; // ← 初期値を1に
+
+      // モーダルを開くときにカウント初期化
+      function openModal(fromBuyTab = false) {
+        isFromBuyTab = fromBuyTab;
+        document.getElementById('modal').style.display = 'block';
+        
+        // 最初のセレクトの値を表示
+        const firstKana = document.querySelector('.kana-select-row select').value;
+        document.getElementById('selectedKana').textContent = firstKana;
+        
+        // カウント関連の表示制御
+        const countControls = [
+          document.getElementById('modalCountMinus'),
+          document.getElementById('modalCountValue'),
+          document.getElementById('modalCountPlus')
+        ];
+        
+        if (isFromBuyTab) {
+          // 買うものタブからの場合はカウント部分を非表示
+          countControls.forEach(element => {
+            element.style.display = 'none';
+          });
+        } else {
+          // ストックタブからの場合はカウント部分を表示
+          countControls.forEach(element => {
+            element.style.display = '';
+          });
+          // カウント初期化
+          modalCount = 1;
+          document.getElementById('modalCountValue').textContent = modalCount;
+        }
+        
+        document.getElementById('itemInput').value = "";
+        // セレクトリセット
+        document.querySelectorAll('.kana-select-row select').forEach(select => {
+          select.selectedIndex = 0;
+        });
+      }
+
+      document.getElementById('addBtn').onclick = () => openModal(false);
+      document.getElementById('buyAddBtn').onclick = () => openModal(true);
+
+      // カウント＋ボタン
+      document.getElementById('modalCountPlus').onclick = function() {
+        modalCount++;
+        document.getElementById('modalCountValue').textContent = modalCount;
+      };
+      // カウント－ボタン
+      document.getElementById('modalCountMinus').onclick = function() {
+        if (modalCount > 1) modalCount--; // ← 1未満にならないように
+        document.getElementById('modalCountValue').textContent = modalCount;
+      };
+
+      // 閉じるボタンでモーダル非表示
+      document.getElementById('closeBtn').onclick = function() {
+        document.getElementById('modal').style.display = 'none';
+      };
+
+      // 追加ボタン（モーダル内）で入力値取得（例: アラート表示）
+      document.getElementById('submitBtn').onclick = function() {
+        const item = document.getElementById('itemInput').value.trim();
+        let selectedKana = "";
+        document.querySelectorAll('.kana-select-row select').forEach(select => {
+          if (select.value && select.value !== "") {
+            selectedKana = select.value;
+          }
+        });
+        if (!selectedKana) {
+          alert('行（カナ）を選択してください');
+          return;
+        }
+        if (!item) {
+          alert('品物名を入力してください');
+          return;
+        }
+        
+        // 重複検知: 同じ名前のアイテムが既に存在するかをチェック
+        const existingItem = stockItems.find(stockItem => 
+          stockItem.name.toLowerCase() === item.toLowerCase()
+        );
+        
+        if (existingItem) {
+          // 重複が検知された場合、確認メッセージを表示
+          const confirmMessage = `「${item}」は既にリストに存在します。既存のアイテムの数量を増やしますか？\n\n「はい」：既存のアイテムの数量を増やす\n「いいえ」：新しいアイテムとして追加`;
+          const shouldUpdateExisting = confirm(confirmMessage);
+          
+          if (shouldUpdateExisting) {
+            // 既存アイテムの数量をFirestoreで更新
+            let newCount;
+            if (isFromBuyTab) {
+              // 買うものタブから追加の場合で既存アイテムのcountが0の場合は1に設定
+              newCount = existingItem.count === 0 ? 1 : existingItem.count + 1;
+            } else {
+              // ストックタブから追加の場合はmodalCount分を追加
+              newCount = existingItem.count + modalCount;
+            }
+            
+            updateItemInFirestore(existingItem.id, newCount);
+            
+            // 入力欄と選択状態をリセット
+            document.getElementById('itemInput').value = "";
+            document.querySelectorAll('.kana-select-row select').forEach(select => {
+              select.selectedIndex = 0;
+            });
+            document.getElementById('selectedKana').textContent = "";
+            
+            // ストックタブの場合のみカウント初期化
+            if (!isFromBuyTab) {
+              modalCount = 1;
+              document.getElementById('modalCountValue').textContent = modalCount;
+            }
+            
+            document.getElementById('modal').style.display = 'none';
+            return;
+          }
+          // 「いいえ」が選択された場合は、新しいアイテムとして追加する処理を続行
+        }
+        
+        // 新しいアイテムとして追加（重複がない場合、または重複があるが新規追加を選択した場合）
+        const itemCount = isFromBuyTab ? 0 : modalCount;
+        
+        // Firestoreにアイテムを追加
+        addItemToFirestore(item, selectedKana, itemCount);
+        
+        // 入力欄と選択状態をリセット
+        document.getElementById('itemInput').value = "";
+        document.querySelectorAll('.kana-select-row select').forEach(select => {
+          select.selectedIndex = 0;
+        });
+        document.getElementById('selectedKana').textContent = "";
+        
+        // ストックタブの場合のみカウント初期化
+        if (!isFromBuyTab) {
+          modalCount = 1;
+          document.getElementById('modalCountValue').textContent = modalCount;
+        }
+        
+        document.getElementById('modal').style.display = 'none';
+      };
+      document.getElementById('footerCloseBtn').onclick = function() {
+        document.getElementById('modal').style.display = 'none';
+      };
+
+      // セレクトボックスの選択でmodal-headerに表示
+      document.querySelectorAll('.kana-select-row select').forEach(select => {
+        select.addEventListener('change', function() {
+          document.getElementById('selectedKana').textContent = this.value;
+        });
+      });
+
+      // 削除モード切り替え
+      document.getElementById('deleteBtn').onclick = function() {
+        deleteMode = !deleteMode;
+        const deleteBtn = document.getElementById('deleteBtn');
+        
+        if (deleteMode) {
+          deleteBtn.textContent = '戻る';
+          deleteBtn.style.backgroundColor = '#ffd700'; // 黄色
+          deleteBtn.style.color = '#000000'; // 黒色
+        } else {
+          deleteBtn.textContent = '削除';
+          deleteBtn.style.backgroundColor = '#ff6347'; // 元の赤色
+        }
+        
+        renderStockList();
+      };
+    </script>
+  </body>
+</html>
