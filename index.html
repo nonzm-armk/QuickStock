@@ -437,8 +437,8 @@
           <div class="modal-body">
             <div class="mb-3">
               <label for="configInput" class="form-label">Firebase設定をカンマ区切りで入力してください：</label>
-              <small class="form-text text-muted">形式: apiKey,authDomain,projectId,storageBucket,messagingSenderId,appId</small>
-              <textarea id="configInput" class="form-control mt-2" rows="3" placeholder="例: AIzaSy...,example.firebaseapp.com,example-project,example.appspot.com,123456789,1:123:web:abc123"></textarea>
+              <small class="form-text text-muted">形式: apiKey,authDomain,projectId,storageBucket,messagingSenderId,appId,userId</small>
+              <textarea id="configInput" class="form-control mt-2" rows="3" placeholder="例: AIzaSy...,example.firebaseapp.com,example-project,example.appspot.com,123456789,1:123:web:abc123,user001"></textarea>
             </div>
             <div id="configError" class="alert alert-danger" style="display:none;"></div>
             <div id="configSuccess" class="alert alert-success" style="display:none;"></div>
@@ -462,6 +462,12 @@
         if (savedConfig) {
           try {
             firebaseConfig = JSON.parse(savedConfig);
+            // userIdがない場合は設定を無効とする
+            if (!firebaseConfig.userId) {
+              console.log('userIdが設定されていません。再設定が必要です。');
+              localStorage.removeItem('firebaseConfig');
+              return false;
+            }
             return true;
           } catch (error) {
             console.error('保存された設定の読み込みに失敗:', error);
@@ -479,18 +485,21 @@
       // カンマ区切り文字列をFirebase設定オブジェクトに変換
       function parseConfigString(configString) {
         const parts = configString.split(',').map(part => part.trim());
-        if (parts.length !== 6) {
-          throw new Error('設定は6つの項目をカンマで区切って入力してください');
+        if (parts.length !== 7) {
+          throw new Error('設定は7つの項目をカンマで区切って入力してください');
         }
         
-        return {
+        const config = {
           apiKey: parts[0],
           authDomain: parts[1],
           projectId: parts[2],
           storageBucket: parts[3],
           messagingSenderId: parts[4],
-          appId: parts[5]
+          appId: parts[5],
+          userId: parts[6] // 7番目の項目をuserIdとして使用
         };
+        
+        return config;
       }
 
       // Firebase接続テスト
@@ -599,7 +608,7 @@
           firebaseConfig = config;
           showConfigSuccess();
         } catch (error) {
-          if (error.message.includes('設定は6つの項目')) {
+          if (error.message.includes('設定は7つの項目')) {
             showConfigError(error.message);
           } else {
             showConfigError('Firebase接続に失敗しました。設定を確認してください。');
@@ -629,10 +638,12 @@
       let deleteMode = false; // 削除モードフラグ
       let isFromBuyTab = false; // 買うものタブからモーダルを開いたかのフラグ
 
+
       // Firestoreからデータを読み込む関数
       function loadItemsFromFirestore() {
         db.collection("items")
-          .orderBy('name')  // 複合インデックス問題を回避するため一時的にnameのみでソート
+          .where("userId", "==", firebaseConfig.userId)
+          .orderBy('name')
           .onSnapshot((querySnapshot) => {
             stockItems = [];
             querySnapshot.forEach((doc) => {
@@ -667,6 +678,7 @@
             name: name,
             furigana: furigana,
             count: count,
+            userId: firebaseConfig.userId,
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
           });
