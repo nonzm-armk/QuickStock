@@ -132,8 +132,8 @@
         margin: 10px;
       }
       .add-button {
-        position: absolute;
-        bottom: calc(120px + env(safe-area-inset-bottom));
+        position: fixed;
+        bottom: 20px;
         right: 20px;
         background-color: #ff69b4;
         color: white;
@@ -144,6 +144,47 @@
         border: none;
         touch-action: manipulation;
         user-select: none;
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        transition: all 0.3s ease;
+      }
+      
+      .add-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+      }
+      
+      .delete-button {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        background-color: #ff6347;
+        color: white;
+        border-radius: 50%;
+        width: 70px;
+        height: 70px;
+        font-size: 1rem;
+        border: none;
+        touch-action: manipulation;
+        user-select: none;
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        transition: all 0.3s ease;
+      }
+      
+      .delete-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+      }
+      
+      /* セーフエリア対応 */
+      @supports (bottom: env(safe-area-inset-bottom)) {
+        .add-button {
+          bottom: calc(20px + env(safe-area-inset-bottom));
+        }
+        .delete-button {
+          bottom: calc(20px + env(safe-area-inset-bottom));
+        }
       }
       .tab-content {
         display: none;
@@ -273,7 +314,7 @@
           <!-- ここにJSでFirestoreからの買うものリストを描画 -->
         </div>
         <!-- ここから追加 -->
-        <button id="deleteBtn" class="add-button" style="background-color: #ff6347; color: white; left: 20px; bottom: calc(120px + env(safe-area-inset-bottom)); display: block; position: absolute;">削除</button>
+        <button id="deleteBtn" class="delete-button">削除</button>
         <!-- ここまで追加 -->
       </div>
 
